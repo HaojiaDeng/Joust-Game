@@ -7,10 +7,15 @@ public class InventoryUIController : MonoBehaviour
     public GameObject weaponCardPrefab;
     public Transform gridParent;
     public float animationDuration = 0.5f;
-    public Vector2 stackedPosition = Vector2.zero; // Position where cards stack together
-    
+    public float bottomOffset = 150f;
+    public float horizontalOffset = 0f;
+    public float fanSpreadAngle = 30f;
+    public float fanRadius = 150f;
+    public float fanVerticalOffset = 30f;
     private List<GameObject> weaponCards = new List<GameObject>();
     private List<Vector2> expandedPositions = new List<Vector2>();
+    private List<float> collapsedRotations = new List<float>();
+    private Vector2 collapsedCenterPosition;
     private bool isExpanded = false;
     private bool isAnimating = false;
 
@@ -27,32 +32,56 @@ public class InventoryUIController : MonoBehaviour
             card.GetComponent<WeaponCardUI>().Setup(weapon);
             weaponCards.Add(card);
         }
-
-        // Wait one frame for layout to position cards, then store positions
         StartCoroutine(StoreExpandedPositions());
     }
 
     private IEnumerator StoreExpandedPositions()
     {
         yield return new WaitForEndOfFrame();
-        
-        // Store the grid layout positions
+        RectTransform parentRect = gridParent.GetComponent<RectTransform>();
+        float panelHeight = parentRect.rect.height;
         foreach (var card in weaponCards)
         {
             RectTransform rt = card.GetComponent<RectTransform>();
+            Vector3 worldPos = rt.position;
+            rt.anchorMin = new Vector2(0.5f, 0.5f);
+            rt.anchorMax = new Vector2(0.5f, 0.5f);
+            rt.position = worldPos;
             expandedPositions.Add(rt.anchoredPosition);
         }
-
-        // Start in collapsed state
+        UnityEngine.UI.GridLayoutGroup gridLayout = gridParent.GetComponent<UnityEngine.UI.GridLayoutGroup>();
+        if (gridLayout != null)
+        {
+            gridLayout.enabled = false;
+        }
+        float yPos = -panelHeight / 2 + bottomOffset;
+        collapsedCenterPosition = new Vector2(horizontalOffset, yPos);
+        CalculateFeatherPositions();
         CollapseImmediate();
+    }
+
+    private void CalculateFeatherPositions()
+    {
+        int cardCount = weaponCards.Count;
+        for (int i = 0; i < cardCount; i++)
+        {
+            float normalizedPosition = (cardCount == 1) ? 0.5f : (float)i / (cardCount - 1);
+            float angle = Mathf.Lerp(-fanSpreadAngle / 2f, fanSpreadAngle / 2f, normalizedPosition);
+            collapsedRotations.Add(angle);
+        }
     }
 
     private void CollapseImmediate()
     {
-        foreach (var card in weaponCards)
+        for (int i = 0; i < weaponCards.Count; i++)
         {
-            RectTransform rt = card.GetComponent<RectTransform>();
-            rt.anchoredPosition = stackedPosition;
+            RectTransform rt = weaponCards[i].GetComponent<RectTransform>();
+            float angle = collapsedRotations[i];
+            float angleRad = angle * Mathf.Deg2Rad;
+            float xOffset = Mathf.Sin(angleRad) * fanRadius;
+            float yOffset = Mathf.Cos(angleRad) * fanVerticalOffset;
+            rt.anchoredPosition = collapsedCenterPosition + new Vector2(xOffset, yOffset);
+            rt.localRotation = Quaternion.Euler(0, 0, angle);
         }
         isExpanded = false;
     }
@@ -60,7 +89,6 @@ public class InventoryUIController : MonoBehaviour
     public void ToggleInventory()
     {
         if (isAnimating) return;
-
         if (isExpanded)
         {
             StartCoroutine(AnimateCollapse());
@@ -75,35 +103,33 @@ public class InventoryUIController : MonoBehaviour
     {
         isAnimating = true;
         float elapsedTime = 0f;
-
-        // Store start positions
         List<Vector2> startPositions = new List<Vector2>();
+        List<Quaternion> startRotations = new List<Quaternion>();
         foreach (var card in weaponCards)
         {
-            startPositions.Add(card.GetComponent<RectTransform>().anchoredPosition);
+            RectTransform rt = card.GetComponent<RectTransform>();
+            startPositions.Add(rt.anchoredPosition);
+            startRotations.Add(rt.localRotation);
         }
-
         while (elapsedTime < animationDuration)
         {
             elapsedTime += Time.deltaTime;
             float t = elapsedTime / animationDuration;
-            float easedT = 1f - Mathf.Pow(1f - t, 3f); // Ease out
-
+            float easedT = 1f - Mathf.Pow(1f - t, 3f);
             for (int i = 0; i < weaponCards.Count; i++)
             {
                 RectTransform rt = weaponCards[i].GetComponent<RectTransform>();
                 rt.anchoredPosition = Vector2.Lerp(startPositions[i], expandedPositions[i], easedT);
+                rt.localRotation = Quaternion.Lerp(startRotations[i], Quaternion.identity, easedT);
             }
-
             yield return null;
         }
-
-        // Ensure final positions
         for (int i = 0; i < weaponCards.Count; i++)
         {
-            weaponCards[i].GetComponent<RectTransform>().anchoredPosition = expandedPositions[i];
+            RectTransform rt = weaponCards[i].GetComponent<RectTransform>();
+            rt.anchoredPosition = expandedPositions[i];
+            rt.localRotation = Quaternion.identity;
         }
-
         isExpanded = true;
         isAnimating = false;
     }
@@ -112,35 +138,40 @@ public class InventoryUIController : MonoBehaviour
     {
         isAnimating = true;
         float elapsedTime = 0f;
-
-        // Store start positions
         List<Vector2> startPositions = new List<Vector2>();
         foreach (var card in weaponCards)
         {
             startPositions.Add(card.GetComponent<RectTransform>().anchoredPosition);
         }
-
+        List<Vector2> targetPositions = new List<Vector2>();
+        for (int i = 0; i < weaponCards.Count; i++)
+        {
+            float angle = collapsedRotations[i];
+            float angleRad = angle * Mathf.Deg2Rad;
+            float xOffset = Mathf.Sin(angleRad) * fanRadius;
+            float yOffset = Mathf.Cos(angleRad) * fanVerticalOffset;
+            targetPositions.Add(collapsedCenterPosition + new Vector2(xOffset, yOffset));
+        }
         while (elapsedTime < animationDuration)
         {
             elapsedTime += Time.deltaTime;
             float t = elapsedTime / animationDuration;
-            float easedT = t * t * t; // Ease in
-
+            float easedT = t * t * t;
             for (int i = 0; i < weaponCards.Count; i++)
             {
                 RectTransform rt = weaponCards[i].GetComponent<RectTransform>();
-                rt.anchoredPosition = Vector2.Lerp(startPositions[i], stackedPosition, easedT);
+                rt.anchoredPosition = Vector2.Lerp(startPositions[i], targetPositions[i], easedT);
+                float targetAngle = collapsedRotations[i];
+                rt.localRotation = Quaternion.Lerp(Quaternion.identity, Quaternion.Euler(0, 0, targetAngle), easedT);
             }
-
             yield return null;
         }
-
-        // Ensure final positions
-        foreach (var card in weaponCards)
+        for (int i = 0; i < weaponCards.Count; i++)
         {
-            card.GetComponent<RectTransform>().anchoredPosition = stackedPosition;
+            RectTransform rt = weaponCards[i].GetComponent<RectTransform>();
+            rt.anchoredPosition = targetPositions[i];
+            rt.localRotation = Quaternion.Euler(0, 0, collapsedRotations[i]);
         }
-
         isExpanded = false;
         isAnimating = false;
     }

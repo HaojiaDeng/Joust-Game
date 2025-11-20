@@ -1,0 +1,4 @@
+repository "joustgame_inventory system/joustgame_inventory system@1375867902979@cloud"
+  path "/"
+    br "/main"
+    co "/main"
