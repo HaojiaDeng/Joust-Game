@@ -73,3 +73,7 @@ crashlytics-build.properties
 # ETC
 SystemInfo.txt
 ignore.conf
+
+# Unity Plastic SCM (version control)
+.plastic/
+Assets/_Recovery/
