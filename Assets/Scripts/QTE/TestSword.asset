@@ -17,7 +17,7 @@ MonoBehaviour:
   cardArt: {fileID: 0}
   baseDamage: 10
   defenseValue: 0
-  qtePattern: {fileID: 0}
+  qtePattern: {fileID: 11400000, guid: e9a7fc6282582fc4d87fb979e7688da0, type: 2}
   chargeAnimation: {fileID: 0}
   successAnimation: {fileID: 0}
   failureAnimation: {fileID: 0}
