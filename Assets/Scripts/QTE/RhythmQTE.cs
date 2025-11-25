@@ -35,6 +35,7 @@ public class RhythmQTE : BaseQTE
                     hitPerfect = true;
                     result.successfulInputs++;
                     ui.ShowSuccess();
+                    yield return new WaitForSeconds(0.15f); // Brief delay to show success
                     break;
                 }
                 elapsed += Time.deltaTime;
@@ -61,6 +62,9 @@ public class RhythmQTE : BaseQTE
             if (!hitPerfect && !hitOkay)
             {
                 ui.ShowFailure();
+                // Deduct health
+                if (GameLoopManager.Instance != null)
+                    GameLoopManager.Instance.TakeDamage();
             }
             
             // Wait for next beat

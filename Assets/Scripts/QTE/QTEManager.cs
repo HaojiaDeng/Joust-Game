@@ -37,15 +37,30 @@ public class QTEManager : MonoBehaviour
         return lastQTEResult;
     }
     
+    public void ClearUI()
+    {
+        if (uiController != null)
+        {
+            uiController.HidePrompt();
+        }
+    }
+    
     private BaseQTE GetQTEExecutor(QTEType type)
     {
+        Debug.Log($"GetQTEExecutor called with type: {type}");
+        
         switch (type)
         {
             case QTEType.Sequence:
                 return gameObject.AddComponent<SequenceQTE>();
             case QTEType.ButtonMash:
                 return gameObject.AddComponent<ButtonMashQTE>();
-            // Add other types...
+            case QTEType.Directional:
+                return gameObject.AddComponent<DirectionalQTE>();
+            case QTEType.Rhythm:
+                return gameObject.AddComponent<RhythmQTE>();
+            case QTEType.HoldAndRelease:
+                return gameObject.AddComponent<HoldAndReleaseQTE>();
             default:
                 return gameObject.AddComponent<SequenceQTE>();
         }

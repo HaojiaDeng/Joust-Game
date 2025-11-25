@@ -9,6 +9,16 @@ public class JoustController : MonoBehaviour
     
     private CardData currentCard;
     
+    // Starting positions for reset
+    private Vector3 playerStartPos = new Vector3(-5f, 0f, 0f);
+    private Vector3 enemyStartPos = new Vector3(5f, 0f, 0f);
+    
+    public void ResetPositions()
+    {
+        if (player != null) player.position = playerStartPos;
+        if (enemy != null) enemy.position = enemyStartPos;
+    }
+    
     public void StartJoust(CardData card)
     {
         Debug.Log("StartJoust called!");
@@ -52,6 +62,7 @@ public class JoustController : MonoBehaviour
             yield break;
         }
         
+        // Use current positions (already reset by ResetPositions)
         Vector3 playerStart = player.position;
         Vector3 enemyStart = enemy.position;
         Vector3 meetPoint = (playerStart + enemyStart) / 2;
@@ -92,15 +103,94 @@ public class JoustController : MonoBehaviour
         
         if (result.isPerfect)
         {
-            // Play success animation
             Debug.Log("Perfect QTE!");
         }
         else
         {
-            // Play failure animation
             Debug.Log("Failed or partial QTE");
         }
         
-        // Apply damage, update game state
+        // Clear QTE UI immediately after completion
+        QTEManager qteManager = GetComponent<QTEManager>();
+        if (qteManager != null)
+        {
+            qteManager.ClearUI();
+        }
+        
+        if (GameLoopManager.Instance != null)
+        {
+            GameLoopManager.Instance.Heal();
+            
+            // Notify RandomEncounterManager of QTE completion
+            var encounterManager = FindFirstObjectByType<RandomEncounterManager>();
+            if (encounterManager != null)
+            {
+                encounterManager.OnQTECompleted();
+            }
+            
+            if (!GameLoopManager.Instance.isGameOver)
+            {
+                StartCoroutine(RestartLoop());
+            }
+        }
+    }
+
+    private IEnumerator RestartLoop()
+    {
+        Debug.Log("RestartLoop: Waiting 2 seconds...");
+        
+        // Ensure UI is cleared at the start of restart
+        QTEManager qteManager = GetComponent<QTEManager>();
+        if (qteManager != null)
+        {
+            qteManager.ClearUI();
+        }
+        
+        // Show round clear message
+        if (GameLoopManager.Instance != null)
+        {
+            int round = GameLoopManager.Instance.roundsCompleted;
+            GameLoopManager.Instance.ShowCenterMessage("ROUND CLEAR!\nGet Ready...", 2f);
+        }
+
+        yield return new WaitForSeconds(2f);
+
+        // Reset positions
+        ResetPositions();
+
+        // Small delay before starting
+        yield return new WaitForSeconds(0.5f);
+
+        Debug.Log("RestartLoop: Finding RandomEncounterManager...");
+        var manager = FindFirstObjectByType<RandomEncounterManager>();
+        if (manager != null) 
+        {
+            Debug.Log("RestartLoop: Calling StartNewRound...");
+            manager.StartNewRound();
+        }
+        else
+        {
+            Debug.LogError("RestartLoop: RandomEncounterManager not found!");
+        }
+    }
+
+    // Get hint text based on QTE type
+    private string GetQTEHint(QTEType qteType)
+    {
+        switch (qteType)
+        {
+            case QTEType.Directional:
+                return "Press Arrow Keys!";
+            case QTEType.ButtonMash:
+                return "Mash the Key Fast!";
+            case QTEType.Sequence:
+                return "Press Keys in Order!";
+            case QTEType.Rhythm:
+                return "Press on the Beat!";
+            case QTEType.HoldAndRelease:
+                return "Hold & Release in Ring!";
+            default:
+                return "Get Ready!";
+        }
     }
 }

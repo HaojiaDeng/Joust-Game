@@ -34,10 +34,17 @@ public class SequenceQTE : BaseQTE
             {
                 result.successfulInputs++;
                 ui.ShowSuccess();
+                yield return new WaitForSeconds(0.2f); // Brief delay to show success
             }
             else
             {
                 ui.ShowFailure();
+                // Visual feedback for failure
+                if (GameLoopManager.Instance != null) 
+                {
+                    GameLoopManager.Instance.TakeDamage();
+                    GameLoopManager.Instance.ShowCenterMessage("MISS!", 0.5f);
+                }
             }
             
             // Gap before next input

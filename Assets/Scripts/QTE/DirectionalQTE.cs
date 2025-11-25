@@ -20,10 +20,17 @@ public class DirectionalQTE : BaseQTE
             {
                 result.successfulInputs++;
                 ui.ShowSuccess();
+                yield return new WaitForSeconds(0.2f); // Brief delay to show success
             }
             else
             {
                 ui.ShowFailure();
+                // Visual feedback for failure
+                if (GameLoopManager.Instance != null) 
+                {
+                    GameLoopManager.Instance.TakeDamage();
+                    GameLoopManager.Instance.ShowCenterMessage("MISS!", 0.5f);
+                }
             }
             
             yield return new WaitForSeconds(pattern.gapBetweenInputs);
