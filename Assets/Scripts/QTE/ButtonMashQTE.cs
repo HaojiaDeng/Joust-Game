@@ -81,8 +81,7 @@ public class ButtonMashQTE : BaseQTE
         if (!showUI) return;
         
         float centerX = Screen.width / 2f;
-        float centerY = Screen.height / 2f - 100f;  // Move up by 100px
-        
+        float centerY = Screen.height / 2f + 50f; 
         // Background panel
         Texture2D bgTex = new Texture2D(1, 1);
         bgTex.SetPixel(0, 0, new Color(0f, 0f, 0f, 0.7f));

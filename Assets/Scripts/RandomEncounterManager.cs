@@ -219,10 +219,13 @@ public class RandomEncounterManager : MonoBehaviour
     // Get hint text based on QTE type
     private string GetQTEHint(QTEType qteType)
     {
+        int currentRound = GameLoopManager.Instance.roundsCompleted;
+        
         switch (qteType)
         {
             case QTEType.Directional:
-                return "Press Arrow Keys!";
+                // Change hint after round 6 when new keys are introduced
+                return currentRound < 6 ? "Press Arrow Keys!" : "Press the Keys!";
             case QTEType.ButtonMash:
                 return "Mash the Key Fast!";
             case QTEType.Sequence:
