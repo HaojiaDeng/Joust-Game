@@ -7,25 +7,20 @@ public class SequenceQTE : BaseQTE
     
     public override IEnumerator Execute(QTEPattern pattern, QTEResult result, QTEUIController ui)
     {
-        Debug.Log("SequenceQTE Execute started!");
-        Debug.Log($"Input sequence count: {pattern.inputSequence.Count}");
         
         result.totalInputs = pattern.inputSequence.Count;
         result.successfulInputs = 0;
         
         foreach (QTEInput input in pattern.inputSequence)
         {
-            Debug.Log($"Processing input: {input.requiredKey}, Window: {input.windowDuration}");
             
             // Wait for delay before this prompt
             yield return new WaitForSeconds(input.delayBeforeThisPrompt);
             
-            Debug.Log("About to show prompt...");
             
             // Show prompt to player
             ui.ShowPrompt(input.requiredKey, input.promptIcon);
             
-            Debug.Log("Prompt shown, waiting for input...");
             
             // Reset wrong key flag
             wasWrongKey = false;
@@ -33,7 +28,6 @@ public class SequenceQTE : BaseQTE
             // Wait for input
             yield return StartCoroutine(WaitForInput(input.requiredKey, input.windowDuration, result));
             
-            Debug.Log($"Input result: {result.lastInputSuccess}");
             
             if (result.lastInputSuccess)
             {
@@ -56,7 +50,6 @@ public class SequenceQTE : BaseQTE
             yield return new WaitForSeconds(pattern.gapBetweenInputs);
         }
         
-        Debug.Log("All inputs processed, calculating result...");
         CalculateFinalResult(pattern, result);
     }
     

@@ -21,19 +21,16 @@ public class JoustController : MonoBehaviour
     
     public void StartJoust(CardData card)
     {
-        Debug.Log("StartJoust called!");
         currentCard = card;
         StartCoroutine(JoustSequence());
     }
     
     private IEnumerator JoustSequence()
     {
-        Debug.Log("JoustSequence started!");
         
         // Play charge animations
         yield return StartCoroutine(ChargeSequence());
         
-        Debug.Log("ChargeSequence complete, starting QTE...");
         
         // Start QTE
         QTEManager qteManager = GetComponent<QTEManager>();
@@ -46,7 +43,6 @@ public class JoustController : MonoBehaviour
         yield return StartCoroutine(qteManager.ExecuteQTE(currentCard.qtePattern));
         QTEResult result = qteManager.GetLastQTEResult();
         
-        Debug.Log("QTE complete!");
         
         // Handle result
         HandleJoustOutcome(result);
@@ -54,7 +50,6 @@ public class JoustController : MonoBehaviour
     
     private IEnumerator ChargeSequence()
     {
-        Debug.Log("ChargeSequence: Starting charge animation");
         
         if (player == null || enemy == null)
         {
@@ -67,7 +62,6 @@ public class JoustController : MonoBehaviour
         Vector3 enemyStart = enemy.position;
         Vector3 meetPoint = (playerStart + enemyStart) / 2;
         
-        Debug.Log($"Player start: {playerStart}, Enemy start: {enemyStart}, Meet point: {meetPoint}");
         
         float duration = 1.5f;
         float elapsed = 0f;
@@ -82,12 +76,10 @@ public class JoustController : MonoBehaviour
             yield return null;
         }
         
-        Debug.Log("ChargeSequence: Animation complete");
     }
     
     private void HandleJoustOutcome(QTEResult result)
     {
-        Debug.Log("HandleJoustOutcome called!");
         
         if (currentCard == null)
         {
@@ -97,17 +89,14 @@ public class JoustController : MonoBehaviour
         
         int finalDamage = Mathf.RoundToInt(currentCard.baseDamage * result.damageMultiplier);
         
-        Debug.Log($"QTE Complete! Success: {result.successfulInputs}/{result.totalInputs}, " +
-                  $"Accuracy: {result.accuracyPercent}%, Damage Multiplier: {result.damageMultiplier}x, " +
-                  $"Final Damage: {finalDamage}");
         
         if (result.isPerfect)
         {
-            Debug.Log("Perfect QTE!");
+            // Perfect QTE
         }
         else
         {
-            Debug.Log("Failed or partial QTE");
+            // Failed or partial QTE
         }
         
         // Clear QTE UI immediately after completion
@@ -119,7 +108,13 @@ public class JoustController : MonoBehaviour
         
         if (GameLoopManager.Instance != null)
         {
-            GameLoopManager.Instance.Heal();
+            // Heal only when QTE was successful (damageMultiplier >= 1)
+            if (result.damageMultiplier >= 1f)
+            {
+                GameLoopManager.Instance.Heal();
+            }
+            // Always advance to next round
+            GameLoopManager.Instance.AdvanceRound();
             
             // Notify RandomEncounterManager of QTE completion
             var encounterManager = FindFirstObjectByType<RandomEncounterManager>();
@@ -137,7 +132,6 @@ public class JoustController : MonoBehaviour
 
     private IEnumerator RestartLoop()
     {
-        Debug.Log("RestartLoop: Waiting 2 seconds...");
         
         // Ensure UI is cleared at the start of restart
         QTEManager qteManager = GetComponent<QTEManager>();
@@ -161,11 +155,9 @@ public class JoustController : MonoBehaviour
         // Small delay before starting
         yield return new WaitForSeconds(0.5f);
 
-        Debug.Log("RestartLoop: Finding RandomEncounterManager...");
         var manager = FindFirstObjectByType<RandomEncounterManager>();
         if (manager != null) 
         {
-            Debug.Log("RestartLoop: Calling StartNewRound...");
             manager.StartNewRound();
         }
         else

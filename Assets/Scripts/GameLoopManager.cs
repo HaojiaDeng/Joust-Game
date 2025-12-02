@@ -24,7 +24,7 @@ public class GameLoopManager : MonoBehaviour
     {
         if (isGameOver) return;
         currentHealth--;
-        Debug.Log($"Damage taken. HP: {currentHealth}");
+        // Damage taken
         
         // Flash damage feedback
         ShowCenterMessage($"HP: {currentHealth}/{maxHealth}", 1f);
@@ -33,23 +33,26 @@ public class GameLoopManager : MonoBehaviour
         {
             isGameOver = true;
             Time.timeScale = 0f; // Freeze game
-            Debug.Log("Game Over - Game Frozen");
+            // Game Over - Game Frozen
         }
     }
 
     public void Heal()
     {
-        if (!isGameOver && currentHealth < maxHealth)
+        if (isGameOver) return;
+        if (currentHealth < maxHealth)
         {
             currentHealth++;
-            roundsCompleted++;
-            Debug.Log($"Healed. HP: {currentHealth}, Round: {roundsCompleted}");
+            // Healed 1 HP
         }
-        else if (!isGameOver)
-        {
-            roundsCompleted++;
-            Debug.Log($"Round: {roundsCompleted}, HP already full");
-        }
+    }
+
+    // Advance round counter regardless of heal state
+    public void AdvanceRound()
+    {
+        if (isGameOver) return;
+        roundsCompleted++;
+        // Round advanced
     }
 
     public void ShowCenterMessage(string message, float duration)

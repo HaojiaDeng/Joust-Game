@@ -36,7 +36,6 @@ public class RandomEncounterManager : MonoBehaviour
     
     private IEnumerator StartNewRoundCoroutine()
     {
-        Debug.Log("StartNewRound called.");
         
         if (GameLoopManager.Instance == null)
         {
@@ -46,7 +45,6 @@ public class RandomEncounterManager : MonoBehaviour
         
         if (GameLoopManager.Instance.isGameOver) 
         {
-            Debug.Log("StartNewRound: Game is over, skipping.");
             yield break;
         }
 
@@ -90,7 +88,6 @@ public class RandomEncounterManager : MonoBehaviour
         
         // Generate dynamic pattern based on round
         QTEPattern dynamicPattern = GeneratePattern(selectedType);
-        Debug.Log($"StartNewRound: Selected QTE type {selectedType}, Round: {GameLoopManager.Instance.roundsCompleted}");
         
         // Show hint for current QTE type
         if (GameLoopManager.Instance != null)
@@ -231,7 +228,7 @@ public class RandomEncounterManager : MonoBehaviour
         if (lastQTEType == QTEType.ButtonMash && GameLoopManager.Instance.roundsCompleted >= 4)
         {
             buttonMashCompletions++;
-            Debug.Log($"Button Mash completed! Total completions: {buttonMashCompletions}");
+            // Track Button Mash completion count
         }
     }
     

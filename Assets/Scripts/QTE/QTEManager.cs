@@ -8,7 +8,6 @@ public class QTEManager : MonoBehaviour
     
     public IEnumerator ExecuteQTE(QTEPattern pattern)
     {
-        Debug.Log("ExecuteQTE called!");
         
         // Check if UI controller is assigned
         if (uiController == null)
@@ -17,17 +16,13 @@ public class QTEManager : MonoBehaviour
             yield break;
         }
         
-        Debug.Log($"UI Controller found: {uiController.name}");
-        Debug.Log($"QTE Pattern: {pattern.patternName}, Type: {pattern.qteType}");
         
         BaseQTE qteExecutor = GetQTEExecutor(pattern.qteType);
-        Debug.Log($"QTE Executor created: {qteExecutor.GetType().Name}");
         
         QTEResult result = new QTEResult();
         
         yield return qteExecutor.Execute(pattern, result, uiController);
         
-        Debug.Log($"QTE execution complete. Result: {result.successfulInputs}/{result.totalInputs}");
         
         lastQTEResult = result;
     }
@@ -47,7 +42,6 @@ public class QTEManager : MonoBehaviour
     
     private BaseQTE GetQTEExecutor(QTEType type)
     {
-        Debug.Log($"GetQTEExecutor called with type: {type}");
         
         switch (type)
         {
