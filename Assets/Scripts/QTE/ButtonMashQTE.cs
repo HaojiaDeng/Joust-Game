@@ -46,6 +46,22 @@ public class ButtonMashQTE : BaseQTE
                 currentPresses++;
                 ui.ShowSuccess();
             }
+            else if (Input.anyKeyDown && !currentlyPressed)
+            {
+                // Check if wrong key was pressed - deal damage
+                foreach (KeyCode key in System.Enum.GetValues(typeof(KeyCode)))
+                {
+                    if (Input.GetKeyDown(key) && key != mashKey && IsGameKey(key))
+                    {
+                        if (GameLoopManager.Instance != null)
+                        {
+                            GameLoopManager.Instance.TakeDamage();
+                            GameLoopManager.Instance.ShowCenterMessage("WRONG KEY!", 0.3f);
+                        }
+                        break;
+                    }
+                }
+            }
             
             lastFramePressed = currentlyPressed;
             elapsed += Time.deltaTime;
@@ -139,5 +155,13 @@ public class ButtonMashQTE : BaseQTE
         timerStyle.normal.textColor = timeRemaining < 1f ? Color.red : Color.white;
         timerStyle.alignment = TextAnchor.MiddleCenter;
         GUI.Label(new Rect(centerX - 50, centerY + 45, 100, 35), timeRemaining.ToString("F1") + "s", timerStyle);
+    }
+    
+    private bool IsGameKey(KeyCode key)
+    {
+        // Check if it's a relevant game key (not mouse buttons, modifiers, etc.)
+        return (key >= KeyCode.A && key <= KeyCode.Z) ||
+               (key >= KeyCode.UpArrow && key <= KeyCode.LeftArrow) ||
+               key == KeyCode.Space;
     }
 }

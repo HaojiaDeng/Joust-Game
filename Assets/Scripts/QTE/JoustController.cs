@@ -181,17 +181,14 @@ public class JoustController : MonoBehaviour
         
         switch (qteType)
         {
-            case QTEType.Directional:
-                // Change hint after round 6 when new keys are introduced
-                return currentRound < 6 ? "Press Arrow Keys!" : "Press the Keys!";
-            case QTEType.ButtonMash:
-                return "Mash the Key Fast!";
             case QTEType.Sequence:
-                return "Press Keys in Order!";
-            case QTEType.Rhythm:
-                return "Press on the Beat!";
+                return currentRound < 4 ? "Press Arrow Keys One by One!" : "Press Keys One by One!";
+            case QTEType.ComboInput:
+                return currentRound < 4 ? "Input Full Arrow Combo!" : "Input Full Key Combo!";
+            case QTEType.ButtonMash:
+                return currentRound < 4 ? "Mash the Arrow Key Fast!" : "Mash the Key Fast!";
             case QTEType.HoldAndRelease:
-                return "Hold & Release in Ring!";
+                return currentRound < 4 ? "Hold & Release Arrow Key!" : "Hold & Release in Ring!";
             default:
                 return "Get Ready!";
         }

@@ -26,6 +26,9 @@ public class GameLoopManager : MonoBehaviour
         currentHealth--;
         Debug.Log($"Damage taken. HP: {currentHealth}");
         
+        // Flash damage feedback
+        ShowCenterMessage($"HP: {currentHealth}/{maxHealth}", 1f);
+        
         if (currentHealth <= 0)
         {
             isGameOver = true;
@@ -69,7 +72,41 @@ public class GameLoopManager : MonoBehaviour
 
     private void OnGUI()
     {
-        GUI.Label(new Rect(10, 10, 200, 20), $"HP: {currentHealth}/{maxHealth}");
+        // Draw HP as large text in top-left
+        float startX = 20f;
+        float startY = 20f;
+        
+        // Determine color based on HP
+        Color hpColor;
+        float hpPercent = (float)currentHealth / maxHealth;
+        if (hpPercent > 0.6f)
+            hpColor = Color.white;  // High HP - white
+        else if (hpPercent > 0.3f)
+            hpColor = new Color(1f, 0.7f, 0f);  // Medium HP - orange
+        else
+            hpColor = Color.red;  // Low HP - red
+        
+        // HP text style
+        GUIStyle hpTextStyle = new GUIStyle();
+        hpTextStyle.fontSize = 48;  // Large font
+        hpTextStyle.fontStyle = FontStyle.Bold;
+        hpTextStyle.normal.textColor = hpColor;
+        hpTextStyle.alignment = TextAnchor.UpperLeft;
+        
+        // Shadow for HP text (black outline)
+        GUIStyle hpShadowStyle = new GUIStyle(hpTextStyle);
+        hpShadowStyle.normal.textColor = Color.black;
+        
+        string hpText = $"HP: {currentHealth}/{maxHealth}";
+        
+        // Draw shadow in 4 directions for outline effect
+        GUI.Label(new Rect(startX - 2, startY, 300, 60), hpText, hpShadowStyle);
+        GUI.Label(new Rect(startX + 2, startY, 300, 60), hpText, hpShadowStyle);
+        GUI.Label(new Rect(startX, startY - 2, 300, 60), hpText, hpShadowStyle);
+        GUI.Label(new Rect(startX, startY + 2, 300, 60), hpText, hpShadowStyle);
+        
+        // Draw main HP text
+        GUI.Label(new Rect(startX, startY, 300, 60), hpText, hpTextStyle);
         
         // Draw center text
         if (!string.IsNullOrEmpty(centerText))

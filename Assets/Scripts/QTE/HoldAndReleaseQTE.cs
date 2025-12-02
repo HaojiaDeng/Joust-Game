@@ -39,16 +39,41 @@ public class HoldAndReleaseQTE : BaseQTE
             // Phase 1: Wait for player to start holding
             float waitTime = 0f;
             float maxWaitTime = input.windowDuration;
+            bool wrongKeyPressed = false;
             
-            while (waitTime < maxWaitTime && !isHolding)
+            while (waitTime < maxWaitTime && !isHolding && !wrongKeyPressed)
             {
                 if (Input.GetKeyDown(input.requiredKey))
                 {
                     isHolding = true;
                     statusText = "HOLD... Release in green zone!";
                 }
+                else if (Input.anyKeyDown)
+                {
+                    // Check if a wrong game key was pressed
+                    foreach (KeyCode key in System.Enum.GetValues(typeof(KeyCode)))
+                    {
+                        if (Input.GetKeyDown(key) && key != input.requiredKey && IsGameKey(key))
+                        {
+                            wrongKeyPressed = true;
+                            break;
+                        }
+                    }
+                }
                 waitTime += Time.deltaTime;
                 yield return null;
+            }
+            
+            if (wrongKeyPressed)
+            {
+                showUI = false;
+                if (GameLoopManager.Instance != null) 
+                {
+                    GameLoopManager.Instance.TakeDamage();
+                    GameLoopManager.Instance.ShowCenterMessage("WRONG KEY!", 0.5f);
+                }
+                yield return new WaitForSeconds(pattern.gapBetweenInputs);
+                continue;
             }
             
             if (!isHolding)
@@ -135,6 +160,14 @@ public class HoldAndReleaseQTE : BaseQTE
         }
         
         CalculateFinalResult(pattern, result);
+    }
+    
+    private bool IsGameKey(KeyCode key)
+    {
+        // Check if it's a relevant game key (not mouse buttons, modifiers, etc.)
+        return (key >= KeyCode.A && key <= KeyCode.Z) ||
+               (key >= KeyCode.UpArrow && key <= KeyCode.LeftArrow) ||
+               key == KeyCode.Space;
     }
     
     private void OnGUI()

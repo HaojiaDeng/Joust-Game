@@ -58,23 +58,34 @@ public class RandomEncounterManager : MonoBehaviour
             joustController.ResetPositions();
         }
         
-        // Show special message at round 6
-        if (currentRound == 6)
+        // Show special message at round 4 (when tutorial ends)
+        if (currentRound == 4)
         {
             GameLoopManager.Instance.ShowCenterMessage("Here goes more challenge!", 3f);
             yield return new WaitForSeconds(3f);
         }
 
-        // Pick random QTE type
+        // Pick QTE type - first 4 rounds are tutorial (one of each type)
         QTEType[] qteTypes = new QTEType[] 
         { 
-            QTEType.Sequence, 
-            QTEType.Directional, 
-            QTEType.Rhythm,
-            QTEType.ButtonMash,
-            QTEType.HoldAndRelease
+            QTEType.Sequence,      // Round 0: One key at a time
+            QTEType.ComboInput,    // Round 1: Helldivers 2 style combo
+            QTEType.ButtonMash,    // Round 2: Rapid mashing
+            QTEType.HoldAndRelease // Round 3: Timing challenge
         };
-        QTEType selectedType = qteTypes[Random.Range(0, qteTypes.Length)];
+        
+        QTEType selectedType;
+        if (currentRound < 4)
+        {
+            // Tutorial rounds: show each QTE type once in order
+            selectedType = qteTypes[currentRound];
+        }
+        else
+        {
+            // After tutorial: random selection
+            selectedType = qteTypes[Random.Range(0, qteTypes.Length)];
+        }
+        
         lastQTEType = selectedType; // Track for completion callback
         
         // Generate dynamic pattern based on round
@@ -115,19 +126,26 @@ public class RandomEncounterManager : MonoBehaviour
         switch (type)
         {
             case QTEType.Sequence:
-            case QTEType.Directional:
-            case QTEType.Rhythm:
-                // Start with 3 keys, add 1 every 2 rounds
+                // One key at a time: Start with 3 keys, add 1 every 2 rounds
                 int keyCount = 3 + (currentRound / 2);
                 pattern.inputSequence = GenerateRandomInputSequence(keyCount, type);
                 pattern.minimumSuccessfulInputs = Mathf.Max(1, keyCount - 1); // Allow 1 mistake
                 break;
+            
+            case QTEType.ComboInput:
+                // Helldivers 2 style: Start with 3 keys, add 1 every 2 rounds
+                int comboCount = 3 + (currentRound / 2);
+                float comboTime = 4f - Mathf.Min(currentRound * 0.15f, 1.5f); // Min 2.5s
+                pattern.inputSequence = GenerateRandomInputSequence(comboCount, type);
+                pattern.inputSequence[0].windowDuration = Mathf.Max(comboTime, 2.5f);
+                pattern.minimumSuccessfulInputs = comboCount; // Must complete entire combo
+                break;
                 
             case QTEType.ButtonMash:
-                // Before round 6: always 6 presses
-                // After round 6: 6 + number of Button Mash completions
+                // Tutorial (rounds 0-3): always 6 presses
+                // After tutorial (round 4+): 6 + number of Button Mash completions
                 int requiredPresses;
-                if (currentRound < 6)
+                if (currentRound < 4)
                 {
                     requiredPresses = 6;
                 }
@@ -161,8 +179,9 @@ public class RandomEncounterManager : MonoBehaviour
                     }
                 };
                 pattern.minimumSuccessfulInputs = 1;
-                // Adjust perfect zone in the QTE executor based on round
-                pattern.gapBetweenInputs = 2.0f - Mathf.Min(currentRound * 0.05f, 0.5f); // Faster growth
+                // Growth speed increases with rounds (shorter duration = faster ring growth)
+                // Tutorial: 2.0s growth time, scales down to minimum 0.8s
+                pattern.gapBetweenInputs = 2.0f - Mathf.Min(currentRound * 0.15f, 1.2f);
                 break;
         }
         
@@ -195,21 +214,21 @@ public class RandomEncounterManager : MonoBehaviour
     {
         int currentRound = GameLoopManager.Instance.roundsCompleted;
         
-        // First 6 rounds: arrow keys only
-        if (currentRound < 6)
+        // First 4 rounds (tutorial): arrow keys only
+        if (currentRound < 4)
         {
             return arrowKeys[Random.Range(0, arrowKeys.Length)];
         }
         
-        // After round 6: all keys
+        // After tutorial (round 4+): all keys
         return allKeys[Random.Range(0, allKeys.Length)];
     }
     
     // Called when a QTE is successfully completed
     public void OnQTECompleted()
     {
-        // Only increment Button Mash counter after round 6
-        if (lastQTEType == QTEType.ButtonMash && GameLoopManager.Instance.roundsCompleted >= 6)
+        // Only increment Button Mash counter after tutorial (round 4+)
+        if (lastQTEType == QTEType.ButtonMash && GameLoopManager.Instance.roundsCompleted >= 4)
         {
             buttonMashCompletions++;
             Debug.Log($"Button Mash completed! Total completions: {buttonMashCompletions}");
@@ -223,17 +242,14 @@ public class RandomEncounterManager : MonoBehaviour
         
         switch (qteType)
         {
-            case QTEType.Directional:
-                // Change hint after round 6 when new keys are introduced
-                return currentRound < 6 ? "Press Arrow Keys!" : "Press the Keys!";
-            case QTEType.ButtonMash:
-                return "Mash the Key Fast!";
             case QTEType.Sequence:
-                return "Press Keys in Order!";
-            case QTEType.Rhythm:
-                return "Press on the Beat!";
+                return currentRound < 4 ? "Press Arrow Keys One by One!" : "Press Keys One by One!";
+            case QTEType.ComboInput:
+                return currentRound < 4 ? "Input Full Arrow Combo!" : "Input Full Key Combo!";
+            case QTEType.ButtonMash:
+                return currentRound < 4 ? "Mash the Arrow Key Fast!" : "Mash the Key Fast!";
             case QTEType.HoldAndRelease:
-                return "Hold & Release in Ring!";
+                return currentRound < 4 ? "Hold & Release Arrow Key!" : "Hold & Release in Ring!";
             default:
                 return "Get Ready!";
         }

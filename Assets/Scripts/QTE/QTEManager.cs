@@ -53,12 +53,10 @@ public class QTEManager : MonoBehaviour
         {
             case QTEType.Sequence:
                 return gameObject.AddComponent<SequenceQTE>();
+            case QTEType.ComboInput:
+                return gameObject.AddComponent<ComboInputQTE>();
             case QTEType.ButtonMash:
                 return gameObject.AddComponent<ButtonMashQTE>();
-            case QTEType.Directional:
-                return gameObject.AddComponent<DirectionalQTE>();
-            case QTEType.Rhythm:
-                return gameObject.AddComponent<RhythmQTE>();
             case QTEType.HoldAndRelease:
                 return gameObject.AddComponent<HoldAndReleaseQTE>();
             default:
