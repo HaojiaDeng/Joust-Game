@@ -99,6 +99,12 @@ public class JoustController : MonoBehaviour
             return;
         }
         
+        QTEManager qteManager = GetComponent<QTEManager>();
+        if (qteManager != null)
+        {
+            qteManager.ClearUI();
+        }
+        
         int finalDamage = Mathf.RoundToInt(currentCard.baseDamage * result.damageMultiplier);
         
         Debug.Log($"QTE Complete! Success: {result.successfulInputs}/{result.totalInputs}, " +
@@ -112,12 +118,6 @@ public class JoustController : MonoBehaviour
         else
         {
             Debug.Log("Failed or partial QTE");
-        }
-        
-        QTEManager qteManager = GetComponent<QTEManager>();
-        if (qteManager != null)
-        {
-            qteManager.ClearUI();
         }
         
         if (GameLoopManager.Instance != null)

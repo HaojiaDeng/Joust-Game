@@ -4,6 +4,7 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
 
 public class CardManagement : MonoBehaviour
 {
@@ -23,14 +24,17 @@ public class CardManagement : MonoBehaviour
     public GameObject clickEffect;
     public RectTransform attackParent;
     public Text logText;
+    public Vector3 bossCardOffset = new Vector3(0f, 250f, 0f);
     public List<RectTransform> cardPositionsAttack = new List<RectTransform>();
     public List<RectTransform> cardPositionsBALANCE = new List<RectTransform>();
     public List<RectTransform> cardPositionsDEFENSE = new List<RectTransform>();
     public List<RectTransform> cardPositions = new List<RectTransform>();
+    private List<RectTransform> originalCardPositions = new List<RectTransform>();
     private int vlaue = 0;
     private int logInt = 12;
     public List<GameObject> cards = new List<GameObject>();
     private GameObject PlayACardObject;
+    private GameObject bossCardObject;
 
     public int NumberBattleCards = 0;
 
@@ -59,7 +63,7 @@ public class CardManagement : MonoBehaviour
             mainCanvas = GetComponentInParent<Canvas>();
             if (mainCanvas == null)
             {
-                mainCanvas = FindObjectOfType<Canvas>();
+                mainCanvas = FindFirstObjectByType<Canvas>();
             }
         }
 
@@ -71,22 +75,26 @@ public class CardManagement : MonoBehaviour
 
     public void StartGame(string cardName)
     {
+        List<RectTransform> sourceList = null;
         switch (cardName)
         {
             case "Attack":
-                cardPositions = cardPositionsAttack;
-                CardAnimation.Instance.StartCardMoveAnimation(cardPositionsAttack);
+                sourceList = cardPositionsAttack;
                 break;
-                case "BALANCE":
-                cardPositions = cardPositionsBALANCE;
-                CardAnimation.Instance.StartCardMoveAnimation(cardPositionsBALANCE);
+            case "BALANCE":
+                sourceList = cardPositionsBALANCE;
                 break;
             case "DEFENSE":
-                cardPositions = cardPositionsDEFENSE;
-                CardAnimation.Instance.StartCardMoveAnimation(cardPositionsDEFENSE);
+                sourceList = cardPositionsDEFENSE;
                 break;
         }
 
+        if (sourceList != null)
+        {
+            originalCardPositions = new List<RectTransform>(sourceList);
+            cardPositions = new List<RectTransform>(sourceList);
+            CardAnimation.Instance.StartCardMoveAnimation(sourceList);
+        }
     }
 
     public void AddCard(GameObject cardObj)
@@ -140,40 +148,43 @@ public class CardManagement : MonoBehaviour
     public void ChooseACard(string name)
     {
         vlaue++;
+        GameObject cardObj = null;
+        CardStats.CardType cardType = CardStats.CardType.Sword;
+        
         switch (name)
         {
             case "Axe":
-                var axe = Instantiate(AXE, HandsPlayed);
-                Button buttonaxe = axe.GetComponent<Button>();
-                buttonaxe.onClick.AddListener(() => PlayACard(axe));
-                cards.Add(axe);
+                cardObj = Instantiate(AXE, HandsPlayed);
+                cardType = CardStats.CardType.Axe;
                 break;
             case "Bow":
-                var bow = Instantiate(Bow, HandsPlayed);
-                Button buttonbow = bow.GetComponent<Button>();
-                buttonbow.onClick.AddListener(() => PlayACard(bow));
-                cards.Add(bow);
+                cardObj = Instantiate(Bow, HandsPlayed);
+                cardType = CardStats.CardType.Bow;
                 break;
             case "Lance":
-                var lance = Instantiate(Lance, HandsPlayed);
-                Button buttonlance = lance.GetComponent<Button>();
-                buttonlance.onClick.AddListener(() => PlayACard(lance));
-                cards.Add(lance);
+                cardObj = Instantiate(Lance, HandsPlayed);
+                cardType = CardStats.CardType.Lance;
                 break;
             case "Shield":
-                var shield = Instantiate(Shield, HandsPlayed);
-                Button buttonshield = shield.GetComponent<Button>();
-                buttonshield.onClick.AddListener(() => PlayACard(shield));
-                cards.Add(shield);
+                cardObj = Instantiate(Shield, HandsPlayed);
+                cardType = CardStats.CardType.Shield;
                 break;
             case "Sword":
-                var sword = Instantiate(Sword, HandsPlayed);
-                Button buttonsword = sword.GetComponent<Button>();
-                buttonsword.onClick.AddListener(() => PlayACard(sword));
-                cards.Add(sword);
+                cardObj = Instantiate(Sword, HandsPlayed);
+                cardType = CardStats.CardType.Sword;
                 break;
             default:
             break;
+        }
+        
+        if (cardObj != null)
+        {
+            Button button = cardObj.GetComponent<Button>();
+            if (button != null)
+            {
+                button.onClick.AddListener(() => PlayACard(cardObj));
+            }
+            cards.Add(cardObj);
         }
         if(vlaue >= 3)
         {
@@ -203,7 +214,6 @@ public class CardManagement : MonoBehaviour
 
     public void PlayACard(GameObject obj)
     {
-
         PlayACardObject = obj;
         PlayACardObject.SetActive(true);
         foreach (var card in cards)
@@ -213,10 +223,13 @@ public class CardManagement : MonoBehaviour
 
 		}
         obj.transform.position += new Vector3(0, 40, 0);
+        
     }
 
     public void EnterQTE()
     {
+        CleanupBossCard();
+
         uiActiveStates.Clear();
 
         GameObject[] uiObjects = { UI4, UI20, UI21, UI22 };
@@ -267,10 +280,153 @@ public class CardManagement : MonoBehaviour
         {
             gameCamera.enabled = gameCameraWasEnabled;
         }
+
+        ReplenishHand();
+    }
+
+    private void ReplenishHand()
+    {
+        cards.RemoveAll(card => card == null);
+        
+        RefreshCardPositions();
+        
+        while (cards.Count < 3 && cardPositions.Count > 0)
+        {
+            int randomIndex = Random.Range(0, cardPositions.Count);
+            RectTransform randomCardRect = cardPositions[randomIndex];
+            if (randomCardRect == null) continue;
+            
+            GameObject randomCardObj = randomCardRect.gameObject;
+            if (randomCardObj == null) continue;
+            
+            Button buttonsword = randomCardObj.GetComponent<Button>();
+            if (buttonsword != null)
+            {
+                buttonsword.onClick.RemoveAllListeners();
+                buttonsword.onClick.AddListener(() => PlayACard(randomCardObj));
+            }
+            randomCardObj.transform.SetParent(attackParent);
+            
+            if (cardPositions.Contains(randomCardRect))
+            {
+                cardPositions.Remove(randomCardRect);
+            }
+            cards.Add(randomCardObj);
+        }
+
+        UpdateCardPositions();
+        Debug.Log($"ReplenishHand: Hand size is now {cards.Count}/3, Deck size: {cardPositions.Count}");
+    }
+
+    private void RefreshCardPositions()
+    {
+        List<RectTransform> sourceList = null;
+        
+        if (originalCardPositions != null && originalCardPositions.Count > 0)
+        {
+            sourceList = originalCardPositions;
+        }
+        else
+        {
+            if (cardPositionsAttack.Count > 0)
+            {
+                sourceList = cardPositionsAttack;
+            }
+            else if (cardPositionsBALANCE.Count > 0)
+            {
+                sourceList = cardPositionsBALANCE;
+            }
+            else if (cardPositionsDEFENSE.Count > 0)
+            {
+                sourceList = cardPositionsDEFENSE;
+            }
+        }
+        
+        if (sourceList == null || sourceList.Count == 0)
+        {
+            Debug.LogWarning("RefreshCardPositions: No source list available!");
+            return;
+        }
+
+        cardPositions.Clear();
+        HashSet<GameObject> cardsInHandSet = new HashSet<GameObject>();
+        foreach (GameObject card in cards)
+        {
+            if (card != null)
+            {
+                cardsInHandSet.Add(card);
+            }
+        }
+        
+        int availableCount = 0;
+        foreach (RectTransform cardRect in sourceList)
+        {
+            if (cardRect == null) continue;
+            
+            GameObject cardObj = cardRect.gameObject;
+            if (cardObj == null) continue;
+            
+            if (!cardsInHandSet.Contains(cardObj))
+            {
+                cardPositions.Add(cardRect);
+                availableCount++;
+            }
+        }
+        
+        Debug.Log($"RefreshCardPositions: Source list has {sourceList.Count} cards, {cardsInHandSet.Count} in hand, {availableCount} available in deck");
+    }
+
+    private void UpdateCardPositions()
+    {
+        for (int i = 0; i < cards.Count; i++)
+        {
+            Vector3 pos;
+            switch (i)
+            {
+                case 0:
+                    pos = new Vector3(300f, -300f, 0f);
+                    break;
+                case 1:
+                    pos = new Vector3(0f, -300f, 0f);
+                    break;
+                case 2:
+                    pos = new Vector3(-300f, -300f, 0f);
+                    break;
+                default:
+                    pos = new Vector3((i - 1) * -300f, -300f, 0f);
+                    break;
+            }
+            cards[i].transform.localPosition = pos;
+            cards[i].SetActive(true);
+        }
+
+        if (cards.Count >= 3)
+        {
+            foreach (var rectran in cardPositions)
+            {
+                Button btn = rectran.GetComponent<Button>();
+                btn.onClick.RemoveAllListeners();
+            }
+            if (UI4 != null)
+            {
+                UI4.SetActive(true);
+            }
+            if (UI20 != null)
+            {
+                UI20.SetActive(false);
+            }
+            if (UI21 != null)
+            {
+                UI21.SetActive(false);
+            }
+            if (UI22 != null)
+            {
+                UI22.SetActive(false);
+            }
+        }
     }
     public void Play()
     {
-        if (PlayACardObject == null) return;
         logInt--;
         logText.text = "Card Left:" + logInt.ToString();
         if (cards.Contains(PlayACardObject))
@@ -287,6 +443,9 @@ public class CardManagement : MonoBehaviour
 
         CardAnimation.Instance.PlayCard(PlayACardObject.GetComponent<RectTransform>());
         yield return new WaitForSeconds(0.45f);
+        
+        RefreshCardPositions();
+        
         if (cardPositions.Count > 0)
         {
             int randomIndex = Random.Range(0, cardPositions.Count);
@@ -302,6 +461,7 @@ public class CardManagement : MonoBehaviour
                 cardPositions.Remove(randomCardRect);
             }
             cards.Add(randomCardObj);
+            
 			foreach (var card in cards)
 			{
 				Vector3 originalPos = card.transform.localPosition;
@@ -309,8 +469,31 @@ public class CardManagement : MonoBehaviour
 
 			}
 		}
-        Destroy(PlayACardObject);
+        
+        GameObject cardToDestroy = PlayACardObject;
         PlayACardObject = null;
+        
+        Destroy(cardToDestroy);
+
+        if (BossStats.Instance != null)
+        {
+            if (!BossStats.Instance.IsActive())
+            {
+                BossManager.Instance?.StartBossBattle();
+            }
+            
+            if (BossBattle.Instance != null)
+            {
+                BossBattle.Instance.StartBossBattle();
+            }
+            
+            ShowBossCard();
+            yield return new WaitForSeconds(1f);
+        }
+        else
+        {
+            Debug.LogWarning("BossStats.Instance is NULL!");
+        }
 
         if (qteReadyText != null)
         {
@@ -324,7 +507,127 @@ public class CardManagement : MonoBehaviour
             qteReadyText.SetActive(false);
         }
 
-        EnterQTE();
-        SceneManager.LoadScene("SampleScene", LoadSceneMode.Additive);
+        StartCoroutine(LoadQTESceneAndSetup());
+    }
+    
+    private IEnumerator LoadQTESceneAndSetup()
+    {
+        AsyncOperation asyncLoad = SceneManager.LoadSceneAsync("SampleScene", LoadSceneMode.Additive);
+        
+        while (!asyncLoad.isDone)
+        {
+            yield return null;
+        }
+        
+        yield return new WaitForSeconds(0.1f);
+        
+        Scene qteScene = SceneManager.GetSceneByName("SampleScene");
+        if (qteScene.IsValid() && qteScene.isLoaded)
+        {
+            EventSystem[] eventSystems = FindObjectsByType<EventSystem>(FindObjectsSortMode.None);
+            EventSystem qteEventSystem = null;
+            
+            foreach (var es in eventSystems)
+            {
+                if (es != null && es.gameObject.scene.name == "SampleScene")
+                {
+                    qteEventSystem = es;
+                    break;
+                }
+            }
+            
+            if (qteEventSystem != null)
+            {
+                qteEventSystem.gameObject.SetActive(false);
+                Debug.Log("Disabled EventSystem in QTE scene to prevent conflicts");
+            }
+            
+            EnterQTE();
+            
+            if (BossBattle.Instance != null && BossBattle.Instance.IsBossBattleActive())
+            {
+                GameObject listenerObj = new GameObject("BossQTEListener");
+                listenerObj.AddComponent<BossQTEListener>();
+                SceneManager.MoveGameObjectToScene(listenerObj, qteScene);
+                Debug.Log("BossQTEListener created in QTE scene");
+            }
+        }
+    }
+
+    private void ShowBossCard()
+    {
+        if (BossManager.Instance == null)
+        {
+            Debug.LogError("BossManager not found!");
+            return;
+        }
+
+        CardStats.CardData bossCard = BossManager.Instance.SelectBossCard();
+        if (bossCard == null)
+        {
+            Debug.LogError("Boss card selection failed!");
+            return;
+        }
+
+        if (bossCardObject != null)
+        {
+            Destroy(bossCardObject);
+            bossCardObject = null;
+        }
+
+        GameObject cardPrefab = GetCardPrefabByType(bossCard.cardType);
+        if (cardPrefab == null)
+        {
+            Debug.LogError($"Card prefab not found for type: {bossCard.cardType}");
+            return;
+        }
+
+        bossCardObject = Instantiate(cardPrefab, attackParent);
+        RectTransform bossCardRect = bossCardObject.GetComponent<RectTransform>();
+        if (bossCardRect != null)
+        {
+            bossCardRect.localPosition = bossCardOffset;
+        }
+        else
+        {
+            bossCardObject.transform.localPosition = bossCardOffset;
+        }
+
+        Button bossButton = bossCardObject.GetComponent<Button>();
+        if (bossButton != null)
+        {
+            bossButton.enabled = false;
+        }
+
+        Debug.Log($"Boss played card: {bossCard.cardType} at position: {bossCardOffset}");
+    }
+
+    private GameObject GetCardPrefabByType(CardStats.CardType cardType)
+    {
+        switch (cardType)
+        {
+            case CardStats.CardType.Axe:
+                return AXE;
+            case CardStats.CardType.Lance:
+                return Lance;
+            case CardStats.CardType.Bow:
+                return Bow;
+            case CardStats.CardType.Sword:
+                return Sword;
+            case CardStats.CardType.Shield:
+                return Shield;
+            default:
+                return null;
+        }
+    }
+
+
+    private void CleanupBossCard()
+    {
+        if (bossCardObject != null)
+        {
+            Destroy(bossCardObject);
+            bossCardObject = null;
+        }
     }
 }

@@ -20,11 +20,24 @@ public class GameLoopManager : MonoBehaviour
         currentHealth = maxHealth;
     }
 
+    private void Start()
+    {
+        if (PlayerHealthUI.Instance != null)
+        {
+            PlayerHealthUI.Instance.UpdateHealth(currentHealth);
+        }
+    }
+
     public void TakeDamage()
     {
         if (isGameOver) return;
         currentHealth--;
         Debug.Log($"Damage taken. HP: {currentHealth}");
+        
+        if (PlayerHealthUI.Instance != null)
+        {
+            PlayerHealthUI.Instance.UpdateHealth(currentHealth);
+        }
         
         if (currentHealth <= 0)
         {
@@ -41,6 +54,11 @@ public class GameLoopManager : MonoBehaviour
             currentHealth++;
             roundsCompleted++;
             Debug.Log($"Healed. HP: {currentHealth}, Round: {roundsCompleted}");
+            
+            if (PlayerHealthUI.Instance != null)
+            {
+                PlayerHealthUI.Instance.UpdateHealth(currentHealth);
+            }
         }
         else if (!isGameOver)
         {
