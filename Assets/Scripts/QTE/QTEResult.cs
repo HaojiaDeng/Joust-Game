@@ -7,6 +7,7 @@ public class QTEResult
     public float accuracyPercent;
     public float damageMultiplier;
     public bool lastInputSuccess;
+    public int baseDamage; // NEW: Store the actual damage dealt
 
     public bool OverallSuccess()
     {

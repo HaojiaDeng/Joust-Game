@@ -106,11 +106,12 @@ public class JoustController : MonoBehaviour
         }
         
         int finalDamage = Mathf.RoundToInt(currentCard.baseDamage * result.damageMultiplier);
-        
+        Debug.Log(result.baseDamage);
         Debug.Log($"QTE Complete! Success: {result.successfulInputs}/{result.totalInputs}, " +
                   $"Accuracy: {result.accuracyPercent}%, Damage Multiplier: {result.damageMultiplier}x, " +
                   $"Final Damage: {finalDamage}");
-        
+        BossStats.Instance.TakeDamage(finalDamage);
+
         if (result.isPerfect)
         {
             Debug.Log("Perfect QTE!");
@@ -226,5 +227,20 @@ public class JoustController : MonoBehaviour
             default:
                 return "Get Ready!";
         }
+    }
+
+    private int CalculateDamageFromQTE(QTEResult result)
+    {
+        if (result.isPerfect)
+        {
+            return currentCard.maxDamage;
+        }
+        
+        float accuracyRatio = result.accuracyPercent / 100f;
+        int damage = Mathf.RoundToInt(
+            Mathf.Lerp(currentCard.minDamage, currentCard.maxDamage, accuracyRatio)
+        );
+        
+        return Mathf.Clamp(damage, currentCard.minDamage, currentCard.maxDamage);
     }
 }
