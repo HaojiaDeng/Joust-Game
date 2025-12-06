@@ -14,3 +14,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::WeaponData
   weaponName: lance
   artwork: {fileID: 21300000, guid: 4d1db7c4abe3f4fd8970cccfdd14b728, type: 3}
+  category: 1
+  minDamage: 1
+  maxDamage: 3
