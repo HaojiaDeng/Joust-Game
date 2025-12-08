@@ -1,0 +1,38 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ed12a5e9336570546ab68a1bcd6d30a0, type: 3}
+  m_Name: TestSwordPattern
+  m_EditorClassIdentifier: Assembly-CSharp::QTEPattern
+  patternName: Test Sword
+  qteType: 0
+  inputSequence:
+  - requiredKey: 32
+    windowDuration: 0.8
+    delayBeforeThisPrompt: 0
+    promptIcon: {fileID: 0}
+    promptSound: {fileID: 0}
+  - requiredKey: 32
+    windowDuration: 0.8
+    delayBeforeThisPrompt: 0
+    promptIcon: {fileID: 0}
+    promptSound: {fileID: 0}
+  - requiredKey: 101
+    windowDuration: 0.8
+    delayBeforeThisPrompt: 0
+    promptIcon: {fileID: 0}
+    promptSound: {fileID: 0}
+  globalInputDelay: 0.5
+  gapBetweenInputs: 0.3
+  minimumSuccessfulInputs: 2
+  mustBeConsecutive: 0
+  perfectBonus: 1.5
+  failurePenalty: 0.5
